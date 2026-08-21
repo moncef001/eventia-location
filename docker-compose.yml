@@ -1,0 +1,63 @@
+version: "3.8"
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: eventia-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  client-service:
+    build: ./client-service
+    container_name: client-service
+    ports:
+      - "4001:4001"
+    environment:
+      PORT: 4001
+      MONGO_URI: mongodb://mongo:27017/eventia-clients
+    depends_on:
+      - mongo
+
+  equipment-service:
+    build: ./equipment-service
+    container_name: equipment-service
+    ports:
+      - "4002:4002"
+    environment:
+      PORT: 4002
+      MONGO_URI: mongodb://mongo:27017/eventia-equipements
+    depends_on:
+      - mongo
+
+  notification-service:
+    build: ./notification-service
+    container_name: notification-service
+    ports:
+      - "4004:4004"
+    environment:
+      PORT: 4004
+      MONGO_URI: mongodb://mongo:27017/eventia-notifications
+    depends_on:
+      - mongo
+
+  reservation-service:
+    build: ./reservation-service
+    container_name: reservation-service
+    ports:
+      - "4003:4003"
+    environment:
+      PORT: 4003
+      MONGO_URI: mongodb://mongo:27017/eventia-reservations
+      CLIENT_SERVICE_URL: http://client-service:4001/api/clients
+      EQUIPMENT_SERVICE_URL: http://equipment-service:4002/api/equipements
+      NOTIFICATION_SERVICE_URL: http://notification-service:4004/api/notifications
+    depends_on:
+      - mongo
+      - client-service
+      - equipment-service
+      - notification-service
+
+volumes:
+  mongo-data:
